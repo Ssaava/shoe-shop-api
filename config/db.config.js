@@ -1,9 +1,9 @@
 import mongoose from "mongoose";
-const DB_STRING = process.env.MONGO_DB_URL;
+import { MONGO_DB_URL } from "./env.config.js";
 
 export const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(DB_STRING);
+    const conn = await mongoose.connect(MONGO_DB_URL);
     console.log("Connected to MongoDB: ", conn.connection.host);
   } catch (error) {
     console.log("MongoDB Connection Error: ", error);
