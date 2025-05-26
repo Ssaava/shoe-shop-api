@@ -43,9 +43,9 @@ export const getSingleProduct = async (_req, res) => {
   }
 };
 
-export const updateProduct = (_req, res) => {
+export const updateProduct = async (_req, res) => {
   try {
-    const product = Product.findByIdAndUpdate(req.params.id, req.body, {
+    const product = await Product.findByIdAndUpdate(_req.params.id, _req.body, {
       new: true,
       runValidators: true,
     });
@@ -58,9 +58,9 @@ export const updateProduct = (_req, res) => {
   }
 };
 
-export const deleteProduct = async (req, res) => {
+export const deleteProduct = async (_req, res) => {
   try {
-    const product = await Product.findByIdAndDelete(req.params.id);
+    const product = await Product.findByIdAndDelete(_req.params.id);
     if (!product) return res.status(404).json({ message: "Product not found" });
     res.status(200).json({ message: "Product deleted" });
   } catch (err) {
