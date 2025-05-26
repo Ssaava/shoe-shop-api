@@ -1,7 +1,9 @@
+import { connectDB } from "../config/db.config.js";
+import { PORT } from "../config/env.config.js";
 import cors from "cors";
 import express from "express";
 
-import authRouter from "./routes/auth.routes.js";
+import authRouter from "../routes/auth.routes.js";
 
 const app = express();
 
@@ -14,5 +16,9 @@ app.get("/status", (_req, res) => {
 });
 
 app.use("/api", authRouter);
+
+connectDB().then(() => {
+  app.listen(PORT, () => console.log(`App listening on port: ${PORT}`));
+});
 
 export default app;
