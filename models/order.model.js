@@ -5,12 +5,22 @@ const orderSchema = new mongoose.Schema({
   paymentStatus: { type: String },
   orderStatus: { type: String },
   deliveryStatus: { type: String },
-  prooductId: { type: [String] },
-  userId: {
+  products: [
+    {
+      productId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
+        ref: "Product",
         required: true,
       },
+      quantity: { type: Number, required: true },
+      price: { type: Number, required: true },
+    },
+  ],
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
 });
 
 const Order = mongoose.model("Order", orderSchema);
