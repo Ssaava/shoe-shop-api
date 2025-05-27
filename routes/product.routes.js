@@ -4,12 +4,12 @@ import {
   getProducts,
   registerProduct,
   updateProduct,
-  getSingleProduct,
+  getProduct,
 } from "../controllers/product.controller.js";
 const productRouter = Router();
 
 productRouter.post("/product", registerProduct);
-productRouter.get("/product/:id", getSingleProduct);
+productRouter.get("/product/:id", getProduct);
 productRouter.get("/products", getProducts);
 productRouter.put("/product/:id", updateProduct);
 productRouter.delete("/product/:id", deleteProduct);
