@@ -1,8 +1,8 @@
 import Product from "../models/product.model.js";
 
-export const registerProduct = async (_req, res) => {
+export const registerProduct = async (req, res) => {
   try {
-    const product = new Product(_req.body);
+    const product = new Product(req.body);
     await product.save();
     res
       .status(201)
@@ -14,7 +14,7 @@ export const registerProduct = async (_req, res) => {
   }
 };
 
-export const getProducts = async (_req, res) => {
+export const getProducts = async (req, res) => {
   try {
     const products = await Product.find().populate("brand category");
     res
@@ -27,9 +27,9 @@ export const getProducts = async (_req, res) => {
   }
 };
 
-export const getProduct = async (_req, res) => {
+export const getProduct = async (req, res) => {
   try {
-    const product = await Product.findById(_req.params.id).populate(
+    const product = await Product.findById(req.params.id).populate(
       "brand category"
     );
     if (!product) {
@@ -43,9 +43,9 @@ export const getProduct = async (_req, res) => {
   }
 };
 
-export const updateProduct = async (_req, res) => {
+export const updateProduct = async (req, res) => {
   try {
-    const product = await Product.findByIdAndUpdate(_req.params.id, _req.body, {
+    const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
     });
@@ -58,9 +58,9 @@ export const updateProduct = async (_req, res) => {
   }
 };
 
-export const deleteProduct = async (_req, res) => {
+export const deleteProduct = async (req, res) => {
   try {
-    const product = await Product.findByIdAndDelete(_req.params.id);
+    const product = await Product.findByIdAndDelete(req.params.id);
     if (!product) return res.status(404).json({ message: "Product not found" });
     res.status(200).json({ message: "Product deleted" });
   } catch (err) {
