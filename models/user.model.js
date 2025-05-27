@@ -6,7 +6,13 @@ const userSchema = new mongoose.Schema(
     lastname: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    contact: { type: String, required: true },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    verificationToken: String,
+    verificationTokenExpires: Date,
+    contact: { type: String },
     role: { type: String, enum: ["user", "admin"], default: "user" },
     addresses: [
       {
