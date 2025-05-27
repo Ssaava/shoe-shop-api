@@ -1,4 +1,4 @@
-import User from "../models/user.model";
+import User from "../models/user.model.js";
 
 export const registerUser = async (_req, res) => {
   try {
@@ -46,7 +46,15 @@ export const getUser = (_req, res) => {
 export const updateUser = (_req, res) => {
   //update a user by ID
   const userId = _req.params.id;
-  const { firstname, lastName, email, contact, profileImage, coverPhoto, address } = _req.body;
+  const {
+    firstname,
+    lastName,
+    email,
+    contact,
+    profileImage,
+    coverPhoto,
+    address,
+  } = _req.body;
   User.findByIdAndUpdate(
     userId,
     { firstname, lastName, email, contact, profileImage, coverPhoto, address },
@@ -56,13 +64,15 @@ export const updateUser = (_req, res) => {
       if (!updatedUser) {
         return res.status(404).json({ message: "User not found" });
       }
-      res.status(200).json({ message: "User updated successfully", user: updatedUser });
+      res
+        .status(200)
+        .json({ message: "User updated successfully", user: updatedUser });
     })
     .catch((error) => {
       console.error("Error updating user:", error);
       res.status(500).json({ message: "Internal server error" });
     });
-}
+};
 export const deleteUser = (_req, res) => {
   res.status(200).json({ message: "User deleted Successfully" });
 };
