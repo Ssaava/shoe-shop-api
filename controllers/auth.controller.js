@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import sendVerificationEmail from "../services/email.service.js";
-
+import { TOKEN_SECRET_KEY } from "../config/env.config.js";
 export const registerUser = async (req, res) => {
   try {
     const { firstname, lastname, email, password, contact } = req.body;
@@ -63,6 +63,56 @@ export const verifyEmail = async (req, res) => {
   }
 };
 
+export const resendVerificationLink = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+    if (user.isVerified) {
+      res.status(400).json({ message: "User already Verified" });
+    }
+
+    const newToken = crypto.randomBytes(20).toString("hex");
+    user.verificationToken = newToken;
+    user.verificationTokenExpires = Date.now() + 24 * 60 * 60 * 1000;
+    await user.save();
+
+    await sendVerificationEmail(email, newToken);
+
+    res.json({ message: "New Verification Link Sent" });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) {
+      res.status(401).json({ message: "User does not exist" });
+    }
+    const checkPassword = await bcrypt.compareSync(password, user.password);
+    if (!checkPassword) {
+      res.status(401).json({ message: "Passwords do not match" });
+    }
+
+    const token = jwt.sign({ userId: user._id }, TOKEN_SECRET_KEY, {
+      expiresIn: "7d",
+    });
+
+    res.cookie("token", token, { httpOnly: true, maxAge: 24 * 60 * 60 * 1000 });
+    res
+      .status(200)
+      .json({ message: "User Logged in successfully", token, user: user });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 export const getUser = (req, res) => {
   //get a user by ID
   try {
