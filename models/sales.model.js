@@ -1,5 +1,4 @@
-const mongoose = require("mongoose");
-
+import mongoose from "mongoose";
 const salesSchema = new mongoose.Schema(
   {
     order: {
@@ -14,4 +13,4 @@ const salesSchema = new mongoose.Schema(
 );
 
 const Sales = mongoose.model("Sales", salesSchema);
-module.exports = Sales;
+export default Sales;

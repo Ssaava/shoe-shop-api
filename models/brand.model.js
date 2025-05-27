@@ -6,4 +6,4 @@ const brandSchema = new mongoose.Schema({
 
 const Brand = mongoose.model("Brand", brandSchema);
 
-export { Brand };
+export default Brand;
