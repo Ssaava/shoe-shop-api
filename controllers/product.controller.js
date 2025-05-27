@@ -16,7 +16,7 @@ export const registerProduct = async (_req, res) => {
 
 export const getProducts = async (_req, res) => {
   try {
-    const products = await Product.find().populate("brandId categoryId");
+    const products = await Product.find().populate("brand category");
     res
       .status(200)
       .json({ message: "Products fetched successfully", products });
@@ -30,7 +30,7 @@ export const getProducts = async (_req, res) => {
 export const getSingleProduct = async (_req, res) => {
   try {
     const product = await Product.findById(_req.params.id).populate(
-      "brandId categoryId"
+      "brand category"
     );
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
