@@ -7,7 +7,7 @@ import {
 } from "../controllers/auth.controller.js";
 const authRouter = Router();
 
-authRouter.post("/user", registerUser);
+authRouter.post("/user/register", registerUser);
 authRouter.get("/user/:id", getUser);
 authRouter.put("/user/:id", updateUser);
 authRouter.delete("/user/:id", deleteUser);
