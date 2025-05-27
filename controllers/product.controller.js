@@ -1,4 +1,4 @@
-import Product from "../models/product.model";
+import Product from "../models/product.model.js";
 
 export const registerProduct = async (_req, res) => {
   try {
@@ -27,7 +27,7 @@ export const getProducts = async (_req, res) => {
   }
 };
 
-export const getSingleProduct = async (_req, res) => {
+export const getProduct = async (_req, res) => {
   try {
     const product = await Product.findById(_req.params.id).populate(
       "brandId categoryId"
