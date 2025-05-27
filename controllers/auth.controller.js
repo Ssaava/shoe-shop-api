@@ -12,6 +12,10 @@ export const registerUser = async (req, res) => {
     if (existingUser) {
       return res.status(403).json({ message: "User already exists" });
     }
+    const existingContact = await User.findOne({ contact });
+    if (existingContact) {
+      return res.status(403).json({ message: "Contact already Registered" });
+    }
     const hashedPassword = await bcrypt.hashSync(password, 10);
 
     const verificationToken = crypto.randomBytes(20).toString("hex");
@@ -33,6 +37,29 @@ export const registerUser = async (req, res) => {
   } catch (error) {
     console.error("Error registering user:", error);
     res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const verifyEmail = async (req, res) => {
+  const { token } = req.query;
+  try {
+    const user = await User.findOne({
+      verificationToken: token,
+      verificationTokenExpires: { $gt: Date.now() }, // check expiry
+    });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or Expired token" });
+    }
+    user.isVerified = true;
+    user.verificationToken = undefined;
+    user.verificationTokenExpires = undefined;
+
+    await user.save();
+
+    res.json({ message: "Email Verified" });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
