@@ -9,10 +9,10 @@ import {
 
 const categoryRouter = Router();
 
-categoryRouter.post("/addCategory", addCategory);
-categoryRouter.get("/category/:id", getCategory);
-categoryRouter.get("/categories", getCategories);
-categoryRouter.patch("/updateCategory/:id", updateCategory);
-categoryRouter.delete("/deleteCategory/:id", deleteCategory);
+categoryRouter.post("/category", addCategory);
+categoryRouter.get("/category/get/:id", getCategory);
+categoryRouter.get("/category/get", getCategories);
+categoryRouter.patch("/category/update/:id", updateCategory);
+categoryRouter.delete("/category/delete/:id", deleteCategory);
 
 export default categoryRouter;
