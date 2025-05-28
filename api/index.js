@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import authRouter from "../routes/auth.routes.js";
 import helmet from "helmet";
 import productRouter from "../routes/product.routes.js";
+import brandRouter from "../routes/brand.routes.js";
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.get("/status", (_req, res) => {
 
 app.use("/api", authRouter);
 app.use("/api", productRouter);
+app.use("/api", brandRouter);
 connectDB().then(() => {
   app.listen(PORT, () => console.log(`App listening on port: ${PORT}`));
 });
