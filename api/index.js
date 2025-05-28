@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import authRouter from "../routes/auth.routes.js";
 import helmet from "helmet";
 import productRouter from "../routes/product.routes.js";
+import userRouter from "../routes/user.routes.js";
 import brandRouter from "../routes/brand.routes.js";
 import categoryRouter from "../routes/category.route.js";
 
@@ -23,6 +24,7 @@ app.get("/status", (_req, res) => {
 
 app.use("/api", authRouter);
 app.use("/api", productRouter);
+app.use("/api", userRouter);
 app.use("/api", brandRouter);
 app.use("/api", categoryRouter);
 connectDB().then(() => {

@@ -1,26 +1,24 @@
 import { Router } from "express";
 import {
-  deleteUser,
-  getUser,
   login,
-  registerUser,
   resendVerificationLink,
-  updateUser,
   verifyEmail,
+  registerUser,
+  logout,
+  refreshToken,
 } from "../controllers/auth.controller.js";
 import { checkAuthentication } from "../middlewares/auth.middleware.js";
 const authRouter = Router();
 
-authRouter.post("/user/register", registerUser);
-authRouter.post("/user/login", login);
-authRouter.get("/user/email-verification", verifyEmail);
+authRouter.post("/auth/register", registerUser);
+authRouter.post("/auth/login", login);
+authRouter.post("/auth/refresh-token", checkAuthentication, refreshToken);
+authRouter.get("/auth/email-verification", verifyEmail);
 authRouter.post(
-  "/user/email-verification",
+  "/auth/resend-verification",
   checkAuthentication,
   resendVerificationLink
 );
-authRouter.get("/user/:id", getUser);
-authRouter.put("/user/:id", updateUser);
-authRouter.delete("/user/:id", deleteUser);
+authRouter.post("/auth/logout", checkAuthentication, logout);
 
 export default authRouter;
