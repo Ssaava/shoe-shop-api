@@ -1,14 +1,17 @@
 import { Router } from "express";
 import {
   deleteUser,
-  getUser,
+  getUsers,
   login,
   registerUser,
   resendVerificationLink,
   updateUser,
   verifyEmail,
 } from "../controllers/auth.controller.js";
-import { checkAuthentication } from "../middlewares/auth.middleware.js";
+import {
+  checkAdminUser,
+  checkAuthentication,
+} from "../middlewares/auth.middleware.js";
 const authRouter = Router();
 
 authRouter.post("/user/register", registerUser);
@@ -19,8 +22,9 @@ authRouter.post(
   checkAuthentication,
   resendVerificationLink
 );
-authRouter.get("/user/:id", getUser);
-authRouter.put("/user/:id", updateUser);
+authRouter.get("/user/users", checkAdminUser, getUsers);
+authRouter.patch("/user/update-user", checkAuthentication, updateUser);
+
 authRouter.delete("/user/:id", deleteUser);
 
 export default authRouter;

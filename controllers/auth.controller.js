@@ -68,7 +68,7 @@ export const resendVerificationLink = async (req, res) => {
     const { email } = req.body;
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: "User not found" });
+      return res.status(404).json({ message: "User not found" });
     }
     if (user.isVerified) {
       res.status(400).json({ message: "User already Verified" });
@@ -93,16 +93,20 @@ export const login = async (req, res) => {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
     if (!user) {
-      res.status(401).json({ message: "User does not exist" });
+      res.status(404).json({ message: "User does not exist" });
     }
     const checkPassword = await bcrypt.compareSync(password, user.password);
     if (!checkPassword) {
       res.status(401).json({ message: "Passwords do not match" });
     }
 
-    const token = jwt.sign({ userId: user._id }, TOKEN_SECRET_KEY, {
-      expiresIn: "7d",
-    });
+    const token = jwt.sign(
+      { userId: user._id, userRole: user.role },
+      TOKEN_SECRET_KEY,
+      {
+        expiresIn: "7d",
+      }
+    );
 
     res.cookie("token", token, { httpOnly: true, maxAge: 24 * 60 * 60 * 1000 });
     res
@@ -113,52 +117,74 @@ export const login = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
-export const getUser = (req, res) => {
-  //get a user by ID
+
+// admin route
+export const getUsers = async (req, res) => {
   try {
-    const userId = req.params.id;
-    User.findById(userId).then((user) => {
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      res.status(200).json(user);
-    });
+    const users = await User.find().select(
+      "-password -verificationToken -verificationTokenExpires"
+    );
+
+    res.status(200).json({ data: users });
   } catch (error) {
     console.error("Error fetching user:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
 
-export const updateUser = (req, res) => {
+export const updateUser = async (req, res) => {
   //update a user by ID
-  const userId = req.params.id;
-  const {
-    firstname,
-    lastName,
-    email,
-    contact,
-    profileImage,
-    coverPhoto,
-    address,
-  } = req.body;
-  User.findByIdAndUpdate(
-    userId,
-    { firstname, lastName, email, contact, profileImage, coverPhoto, address },
-    { new: true }
-  )
-    .then((updatedUser) => {
-      if (!updatedUser) {
-        return res.status(404).json({ message: "User not found" });
+
+  try {
+    const userData = req.body;
+    const userId = req.userId;
+
+    const restrictedFields = [
+      "role",
+      "email",
+      "password",
+      "isVerified",
+      "verificationToken",
+      "verificationTokenExpires",
+    ];
+
+    const attemptedRestrictedUpdates = Object.keys(userData).filter((field) =>
+      restrictedFields.includes(field)
+    );
+
+    if (attemptedRestrictedUpdates.length > 0) {
+      return res.status(403).json({
+        error: "Forbidden",
+        message: `Cannot update restricted fields: ${attemptedRestrictedUpdates.join(
+          ", "
+        )}`,
+        solution:
+          "Use dedicated endpoints for these actions (e.g., /api/user/change-password)",
+      });
+    }
+
+    restrictedFields.forEach((field) => delete userData[field]);
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $set: userData },
+      {
+        new: true,
+        runValidators: true,
       }
-      res
-        .status(200)
-        .json({ message: "User updated successfully", user: updatedUser });
-    })
-    .catch((error) => {
-      console.error("Error updating user:", error);
-      res.status(500).json({ message: "Internal server error" });
-    });
+    ).select("-password");
+
+    if (!updatedUser) res.status(404).json({ message: "User Not Found" });
+
+    res
+      .status(200)
+      .json({ message: "User updated Successfully", data: updatedUser });
+  } catch (err) {
+    console.log(err);
+    res.status(401).json({ message: "Failed to update user" });
+  }
 };
+
 export const deleteUser = (req, res) => {
   res.status(200).json({ message: "User deleted Successfully" });
 };
