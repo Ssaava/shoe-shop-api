@@ -1,30 +1,22 @@
 import { Router } from "express";
 import {
-  deleteUser,
-  getUsers,
   login,
-  registerUser,
   resendVerificationLink,
-  updateUser,
   verifyEmail,
+  registerUser,
+  logout,
 } from "../controllers/auth.controller.js";
-import {
-  checkAdminUser,
-  checkAuthentication,
-} from "../middlewares/auth.middleware.js";
+import { checkAuthentication } from "../middlewares/auth.middleware.js";
 const authRouter = Router();
 
-authRouter.post("/user/register", registerUser);
-authRouter.post("/user/login", login);
-authRouter.get("/user/email-verification", verifyEmail);
+authRouter.post("/auth/register", registerUser);
+authRouter.post("/auth/login", login);
+authRouter.get("/auth/email-verification", verifyEmail);
 authRouter.post(
-  "/user/email-verification",
+  "/auth/resend-verification",
   checkAuthentication,
   resendVerificationLink
 );
-authRouter.get("/user/users", checkAdminUser, getUsers);
-authRouter.patch("/user/update-user", checkAuthentication, updateUser);
-
-authRouter.delete("/user/:id", deleteUser);
+authRouter.post("/auth/logout", checkAuthentication, logout);
 
 export default authRouter;
