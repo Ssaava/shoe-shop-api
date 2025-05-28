@@ -10,11 +10,15 @@ export const registerUser = async (req, res) => {
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(403).json({ message: "User already exists" });
+      return res
+        .status(403)
+        .json({ success: false, message: "User already exists" });
     }
     const existingContact = await User.findOne({ contact });
     if (existingContact) {
-      return res.status(403).json({ message: "Contact already Registered" });
+      return res
+        .status(403)
+        .json({ success: false, message: "Contact already Registered" });
     }
     const hashedPassword = await bcrypt.hashSync(password, 10);
 
@@ -33,10 +37,10 @@ export const registerUser = async (req, res) => {
 
     await sendVerificationEmail(email, verificationToken);
 
-    res.status(201).json({ message: "Verification Email Sent" });
+    res.status(201).json({ success: true, message: "Verification Email Sent" });
   } catch (error) {
     console.error("Error registering user:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
@@ -48,7 +52,9 @@ export const verifyEmail = async (req, res) => {
       verificationTokenExpires: { $gt: Date.now() }, // check expiry
     });
     if (!user) {
-      return res.status(400).json({ message: "Invalid or Expired token" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid or Expired token" });
     }
     user.isVerified = true;
     user.verificationToken = undefined;
@@ -59,7 +65,7 @@ export const verifyEmail = async (req, res) => {
     res.json({ message: "Email Verified" });
   } catch (err) {
     console.log(err);
-    res.status(500).json({ message: "Internal Server Error" });
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 
@@ -68,10 +74,14 @@ export const resendVerificationLink = async (req, res) => {
     const { email } = req.body;
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
     if (user.isVerified) {
-      res.status(400).json({ message: "User already Verified" });
+      res
+        .status(400)
+        .json({ success: false, message: "User already Verified" });
     }
 
     const newToken = crypto.randomBytes(20).toString("hex");
@@ -81,10 +91,12 @@ export const resendVerificationLink = async (req, res) => {
 
     await sendVerificationEmail(email, newToken);
 
-    res.json({ message: "New Verification Link Sent" });
+    res
+      .status(200)
+      .json({ success: true, message: "New Verification Link Sent" });
   } catch (err) {
     console.log(err);
-    res.status(500).json({ message: "Internal Server Error" });
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 
@@ -93,7 +105,7 @@ export const login = async (req, res) => {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
     if (!user) {
-      res.status(404).json({ message: "User does not exist" });
+      res.status(404).json({ success: false, message: "User does not exist" });
     }
     const checkPassword = await bcrypt.compareSync(password, user.password);
     if (!checkPassword) {
@@ -109,16 +121,39 @@ export const login = async (req, res) => {
     );
 
     res.cookie("token", token, { httpOnly: true, maxAge: 24 * 60 * 60 * 1000 });
-    res
-      .status(200)
-      .json({ message: "User Logged in successfully", token, user: user });
+    res.status(200).json({
+      success: true,
+      message: "User Logged in successfully",
+      token,
+      user: user,
+    });
   } catch (err) {
     console.log(err);
-    res.status(500).json({ message: "Internal Server Error" });
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 
-export const refreshToken = () => {};
+export const refreshToken = async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    const user = await User.findById(userId);
+
+    res.status(200).json({
+      success: true,
+      message: "token refreshed successfully",
+      token: "token",
+      refreshToken: "token",
+      user,
+    });
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
 
 export const logout = async (_req, res) => {
   try {
