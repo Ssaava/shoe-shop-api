@@ -1,5 +1,4 @@
-import models from "../models/brand.model.js";
-const { Brand } = models;
+import Brand from "../models/brand.model.js";
 
 export const registerBrand = async (req, res) => {
   try {
@@ -11,12 +10,22 @@ export const registerBrand = async (req, res) => {
   }
 };
 
-export const getBrand = async (_req, res) => {
+export const getBrands = async (_req, res) => {
   try {
-    const brand = await Brand.find();
-    res.status(200).json({ message: "Brand fetched", brand });
+    const brands = await Brand.find();
+    res.status(200).json({ message: "Brands fetched", brands });
   } catch (error) {
     res.status(404).json({ error: error.message });
+  }
+};
+
+export const getBrand = async (req, res) => {
+  try {
+    const brand = await Brand.findById(req.params.id);
+    if (!brand) return res.status(404).json({ message: "Brand not found" });
+    return res.status(200).json({ message: "Brand Fetched", brand });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 };
 
