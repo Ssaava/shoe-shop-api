@@ -17,10 +17,6 @@
 
 - clone the repository
 
-```bash
-
-```
-
 - install the dependencies
 
 ```bash
