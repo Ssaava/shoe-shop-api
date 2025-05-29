@@ -16,7 +16,7 @@ const transporter = nodemailer.createTransport({
 });
 
 const sendVerificationEmail = async (email, token) => {
-  const verificationLink = `${SERVER_URL}/api/user/email-verification?token=${token}`;
+  const verificationLink = `${SERVER_URL}/api/auth/email-verification?token=${token}`;
   try {
     await transporter.sendMail({
       from: `"Shoe Shop" <${EMAIL_USER}>`,

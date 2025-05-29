@@ -11,4 +11,5 @@ export const {
   EMAIL_PASSWORD,
   SERVER_URL,
   TOKEN_SECRET_KEY,
+  REFRESH_TOKEN_SECRET,
 } = process.env;

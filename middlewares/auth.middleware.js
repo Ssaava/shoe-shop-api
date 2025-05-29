@@ -2,9 +2,9 @@ import jwt from "jsonwebtoken";
 import { TOKEN_SECRET_KEY } from "../config/env.config.js";
 export const checkAuthentication = async (req, res, next) => {
   try {
-    const token = req.cookies.token || req.headers.split(" ")[1];
-    if (!token) return res.status(401).json({ message: "Please login" });
-    const decodedToken = jwt.verify(token, TOKEN_SECRET_KEY); // throws an error if token is invalid
+    const access_token = req.cookies.accessToken || req.headers.split(" ")[1];
+    if (!access_token) return res.status(401).json({ message: "Please login" });
+    const decodedToken = jwt.verify(access_token, TOKEN_SECRET_KEY); // throws an error if token is invalid
     req.userId = decodedToken.userId;
     next();
   } catch (err) {
@@ -17,10 +17,10 @@ export const checkAuthentication = async (req, res, next) => {
 
 export const checkAdminUser = async (req, res, next) => {
   try {
-    const token = req.cookies.token || req.headers.split(" ")[1];
-    if (!token)
+    const access_token = req.cookies.accessToken || req.headers.split(" ")[1];
+    if (!access_token)
       return res.status(401).json({ message: "Please login to access route" });
-    const decodedToken = jwt.verify(token, TOKEN_SECRET_KEY);
+    const decodedToken = jwt.verify(access_token, TOKEN_SECRET_KEY);
 
     if (decodedToken.userRole !== "admin")
       res.status(401).json({ message: "User must me an admin" });
