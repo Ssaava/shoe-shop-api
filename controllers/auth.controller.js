@@ -1,9 +1,10 @@
-import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import User from "../models/user.model.js";
 import sendVerificationEmail from "../services/email.service.js";
-import { TOKEN_SECRET_KEY } from "../config/env.config.js";
+import { generateToken } from "../utils/utils.js";
+import { REFRESH_TOKEN_SECRET } from "../config/env.config.js";
+import jwt from "jsonwebtoken";
 export const registerUser = async (req, res) => {
   try {
     const { firstname, lastname, email, password, contact } = req.body;
@@ -112,20 +113,38 @@ export const login = async (req, res) => {
       res.status(401).json({ message: "Passwords do not match" });
     }
 
-    const token = jwt.sign(
-      { userId: user._id, userRole: user.role },
-      TOKEN_SECRET_KEY,
-      {
-        expiresIn: "7d",
-      }
-    );
+    const { access_token, refresh_token } = generateToken(user);
 
-    res.cookie("token", token, { httpOnly: true, maxAge: 24 * 60 * 60 * 1000 });
+    user.refreshTokens.push({
+      token: refresh_token,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"],
+    });
+
+    await user.save();
+
+    res.cookie("accessToken", access_token, {
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+    res.cookie("refreshToken", refresh_token, {
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000,
+    });
     res.status(200).json({
       success: true,
       message: "User Logged in successfully",
-      token,
-      user: user,
+      access_token,
+      refresh_token,
+      data: {
+        firstname: user.firstname,
+        lastname: user.lastname,
+        email: user.email,
+        isVerified: user.isVerified,
+        contact: user.contact,
+        role: user.role,
+      },
     });
   } catch (err) {
     console.log(err);
@@ -135,29 +154,77 @@ export const login = async (req, res) => {
 
 export const refreshToken = async (req, res) => {
   try {
-    const userId = req.userId;
+    const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
 
-    const user = await User.findById(userId);
+    if (!refreshToken) {
+      return res
+        .status(401)
+        .json({ success: false, message: "refresh token not found" });
+    }
 
+    const decodedToken = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET);
+
+    const user = await User.findOne({
+      _id: decodedToken.userId,
+      "refreshTokens.token": refreshToken,
+    });
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User Not Found" });
+
+    const { access_token, refresh_token } = generateToken(user);
+
+    user.refreshTokens = user.refreshTokens.filter(
+      (rt) => rt.token !== refreshToken
+    );
+    user.refreshTokens.push({
+      token: refresh_token,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"],
+    });
+
+    await user.save();
+    res.cookie("refreshToken", refresh_token, {
+      maxAge: 24 * 60 * 60 * 10000,
+      secure: true,
+      httpOnly: true,
+    });
+
+    res.cookie("accessToken", access_token, {
+      maxAge: 7 * 24 * 60 * 60 * 10000,
+      secure: true,
+      httpOnly: true,
+    });
     res.status(200).json({
       success: true,
       message: "token refreshed successfully",
-      token: "token",
-      refreshToken: "token",
-      user,
+      access_token,
+      refresh_token,
     });
   } catch (err) {
     console.log(err.message);
     res.status(500).json({
       success: false,
-      message: "Internal Server Error",
+      message: "Invalid or expired refresh token",
     });
   }
 };
 
-export const logout = async (_req, res) => {
+export const logout = async (req, res) => {
   try {
-    res.clearCookie("token", {
+    const refreshToken = req.cookies.refreshToken;
+    await User.updateOne(
+      { _id: req.userId },
+      { $pull: { refreshTokens: { token: refreshToken } } }
+    );
+    res.clearCookie("accessToken", {
+      httpOnly: true,
+      sameSite: "strict",
+      secure: true,
+    });
+    res.clearCookie("refreshToken", {
       httpOnly: true,
       sameSite: "strict",
       secure: true,
