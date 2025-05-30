@@ -1,7 +1,6 @@
 import jwt from "jsonwebtoken";
 import { TOKEN_SECRET_KEY } from "../config/env.config.js";
 export const checkAuthentication = async (req, res, next) => {
-  console.log("Reqest Object: ", req);
   try {
     const access_token =
       req.cookies.accessToken || req.headers.authorization.split(" ")[1];
