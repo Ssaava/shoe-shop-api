@@ -34,7 +34,7 @@ export const sendPasswordChangeNotification = async (email) => {
     await transporter.sendMail({
       from: `"Shoe Shop" <${EMAIL_USER}>`,
       to: email,
-      subject: "Verify Email Shoe Shop",
+      subject: "Password Change Update",
       html: `Your password was recently updated`,
     });
   } catch (err) {
