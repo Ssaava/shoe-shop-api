@@ -1,7 +1,10 @@
 import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
-import { sendPasswordChangeNotification } from "../services/email.service.js";
-
+import {
+  sendPasswordChangeNotification,
+  sendRequestPasswordResetEmail,
+} from "../services/email.service.js";
+import crypto from "crypto";
 // admin route
 export const getUsers = async (req, res) => {
   try {
@@ -135,6 +138,78 @@ export const updateUserPassword = async (req, res) => {
   } catch (err) {
     console.log("password update error: ", err);
     res.status(401).json({ message: "Failed to update password" });
+  }
+};
+
+export const requestPasswordReset = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User does not exist",
+      });
+    }
+
+    const resetToken = crypto.randomBytes(20).toString("hex");
+    const resetTokenExpiry = Date.now() + 3600000;
+
+    user.resetToken = resetToken;
+    user.resetTokenExpiry = resetTokenExpiry;
+    await user.save();
+
+    // 3. Send reset email
+    sendRequestPasswordResetEmail(user.email, resetToken);
+
+    res.status(200).json({
+      success: true,
+      message: "Reset link sent to email",
+    });
+  } catch (err) {
+    console.error("Reset request error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Error processing reset request",
+    });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    const user = await User.findOne({
+      resetToken: token,
+      resetTokenExpiry: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired token",
+      });
+    }
+
+    user.password = await bcrypt.hashSync(newPassword, 10);
+    user.resetToken = undefined;
+    user.resetTokenExpiry = undefined;
+    await user.save();
+
+    user.refreshTokens = [];
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Password updated successfully",
+    });
+  } catch (err) {
+    console.error("Password reset error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Error resetting password",
+    });
   }
 };
 

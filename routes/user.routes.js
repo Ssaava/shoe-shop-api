@@ -1,6 +1,6 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
-const passwordLimiter = rateLimit({
+const rateLimiting = rateLimit({
   windowMs: 15 * 60 * 60,
   max: 5,
 });
@@ -13,6 +13,8 @@ import {
   updateUser,
   deleteUser,
   updateUserPassword,
+  requestPasswordReset,
+  resetPassword,
 } from "../controllers/user.controller.js";
 const userRouter = Router();
 
@@ -21,9 +23,11 @@ userRouter.patch("/user/update-user", checkAuthentication, updateUser);
 userRouter.put(
   "/user/update-user-password",
   checkAuthentication,
-  passwordLimiter,
+  rateLimiting,
   updateUserPassword
 );
+userRouter.post("/user/forgot-password", rateLimiting, requestPasswordReset);
+userRouter.put("/user/reset-password", resetPassword);
 
 userRouter.delete("/user/:id", deleteUser);
 

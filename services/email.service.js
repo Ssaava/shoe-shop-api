@@ -42,4 +42,22 @@ export const sendPasswordChangeNotification = async (email) => {
   }
 };
 
+export const sendRequestPasswordResetEmail = async (email, resetToken) => {
+  const resetUrl = `https://frontend.com/reset-password?token=${resetToken}`;
+  try {
+    await transporter.sendMail({
+      from: `"Shoe Shop" <${EMAIL_USER}>`,
+      to: email,
+      subject: "Password Reset Request",
+      html: `
+        <p>You requested a password reset. Click the link below:</p>
+        <a href="${resetUrl}">Reset Password</a>
+        <p>This link expires in 1 hour.</p>
+      `,
+    });
+  } catch (err) {
+    console.log(err);
+  }
+};
+
 export default sendVerificationEmail;
