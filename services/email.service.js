@@ -16,13 +16,44 @@ const transporter = nodemailer.createTransport({
 });
 
 const sendVerificationEmail = async (email, token) => {
-  const verificationLink = `${SERVER_URL}/api/user/email-verification?token=${token}`;
+  const verificationLink = `${SERVER_URL}/api/auth/email-verification?token=${token}`;
   try {
     await transporter.sendMail({
       from: `"Shoe Shop" <${EMAIL_USER}>`,
       to: email,
       subject: "Verify Email Shoe Shop",
       html: `Click <a href="${verificationLink}">here</a> to verify your email.`,
+    });
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+export const sendPasswordChangeNotification = async (email) => {
+  try {
+    await transporter.sendMail({
+      from: `"Shoe Shop" <${EMAIL_USER}>`,
+      to: email,
+      subject: "Password Change Update",
+      html: `Your password was recently updated`,
+    });
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+export const sendRequestPasswordResetEmail = async (email, resetToken) => {
+  const resetUrl = `https://frontend.com/reset-password?token=${resetToken}`;
+  try {
+    await transporter.sendMail({
+      from: `"Shoe Shop" <${EMAIL_USER}>`,
+      to: email,
+      subject: "Password Reset Request",
+      html: `
+        <p>You requested a password reset. Click the link below:</p>
+        <a href="${resetUrl}">Reset Password</a>
+        <p>This link expires in 1 hour.</p>
+      `,
     });
   } catch (err) {
     console.log(err);

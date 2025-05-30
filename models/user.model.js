@@ -12,6 +12,16 @@ const userSchema = new mongoose.Schema(
     },
     verificationToken: String,
     verificationTokenExpires: Date,
+    resetToken: String,
+    resetTokenExpiry: Date,
+    refreshTokens: [
+      {
+        token: String,
+        expiresAt: Date,
+        ipAddress: String,
+        userAgent: String,
+      },
+    ],
     contact: { type: String },
     role: { type: String, enum: ["user", "admin"], default: "user" },
     addresses: [
