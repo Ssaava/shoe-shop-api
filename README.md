@@ -99,6 +99,7 @@ A RESTful e-commerce API for a shoe store built with Node.js, Express, and Mongo
 
 ## Project Structure
 
+```bash
 shoe-shop-api/
 ├── config/ # Database and environment configs
 ├── controllers/ # Route controllers
@@ -108,3 +109,4 @@ shoe-shop-api/
 ├── utils/ # Helper functions
 ├── services/ # Services
 └── api/index.js # Express app setup and Server entry point
+```
