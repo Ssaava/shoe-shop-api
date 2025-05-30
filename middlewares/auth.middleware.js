@@ -1,8 +1,10 @@
 import jwt from "jsonwebtoken";
 import { TOKEN_SECRET_KEY } from "../config/env.config.js";
 export const checkAuthentication = async (req, res, next) => {
+  console.log("Reqest Object: ", req);
   try {
-    const access_token = req.cookies.accessToken || req.headers.split(" ")[1];
+    const access_token =
+      req.cookies.accessToken || req.headers.authorization.split(" ")[1];
     if (!access_token) return res.status(401).json({ message: "Please login" });
     const decodedToken = jwt.verify(access_token, TOKEN_SECRET_KEY); // throws an error if token is invalid
     req.userId = decodedToken.userId;
@@ -17,7 +19,8 @@ export const checkAuthentication = async (req, res, next) => {
 
 export const checkAdminUser = async (req, res, next) => {
   try {
-    const access_token = req.cookies.accessToken || req.headers.split(" ")[1];
+    const access_token =
+      req.cookies.accessToken || req.headers.authorization.split(" ")[1];
     if (!access_token)
       return res.status(401).json({ message: "Please login to access route" });
     const decodedToken = jwt.verify(access_token, TOKEN_SECRET_KEY);
