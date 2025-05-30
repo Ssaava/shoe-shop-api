@@ -29,4 +29,17 @@ const sendVerificationEmail = async (email, token) => {
   }
 };
 
+export const sendPasswordChangeNotification = async (email) => {
+  try {
+    await transporter.sendMail({
+      from: `"Shoe Shop" <${EMAIL_USER}>`,
+      to: email,
+      subject: "Verify Email Shoe Shop",
+      html: `Your password was recently updated`,
+    });
+  } catch (err) {
+    console.log(err);
+  }
+};
+
 export default sendVerificationEmail;
