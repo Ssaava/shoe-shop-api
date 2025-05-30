@@ -122,7 +122,7 @@ export const updateUserPassword = async (req, res) => {
       refreshTokens: [],
     });
 
-    sendPasswordChangeNotification(user.email);
+    await sendPasswordChangeNotification(user.email);
 
     res.clearCookie("accessToken", {
       httpOnly: true,
@@ -160,8 +160,7 @@ export const requestPasswordReset = async (req, res) => {
     user.resetTokenExpiry = resetTokenExpiry;
     await user.save();
 
-    // 3. Send reset email
-    sendRequestPasswordResetEmail(user.email, resetToken);
+    await sendRequestPasswordResetEmail(user.email, resetToken);
 
     res.status(200).json({
       success: true,
@@ -200,6 +199,16 @@ export const resetPassword = async (req, res) => {
     user.refreshTokens = [];
     await user.save();
 
+    res.clearCookie("accessToken", {
+      httpOnly: true,
+      sameSite: "strict",
+      secure: true,
+    });
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      sameSite: "strict",
+      secure: true,
+    });
     res.status(200).json({
       success: true,
       message: "Password updated successfully",
