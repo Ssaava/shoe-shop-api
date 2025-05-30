@@ -9,6 +9,7 @@ import productRouter from "../routes/product.routes.js";
 import userRouter from "../routes/user.routes.js";
 import brandRouter from "../routes/brand.routes.js";
 import categoryRouter from "../routes/category.route.js";
+import cartRouter from "../routes/cart.routes.js";
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use("/api", productRouter);
 app.use("/api", userRouter);
 app.use("/api", brandRouter);
 app.use("/api", categoryRouter);
+app.use("/api", cartRouter);
 connectDB().then(() => {
   app.listen(PORT, () => console.log(`App listening on port: ${PORT}`));
 });
