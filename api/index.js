@@ -10,6 +10,7 @@ import userRouter from "../routes/user.routes.js";
 import brandRouter from "../routes/brand.routes.js";
 import categoryRouter from "../routes/category.route.js";
 import cartRouter from "../routes/cart.routes.js";
+import orderRouter from "../routes/order.routes.js";
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use("/api", userRouter);
 app.use("/api", brandRouter);
 app.use("/api", categoryRouter);
 app.use("/api", cartRouter);
+app.use("/api", orderRouter);
 connectDB().then(() => {
   app.listen(PORT, () => console.log(`App listening on port: ${PORT}`));
 });
