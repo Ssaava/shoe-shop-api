@@ -7,6 +7,7 @@ export const checkAuthentication = async (req, res, next) => {
     if (!access_token) return res.status(401).json({ message: "Please login" });
     const decodedToken = jwt.verify(access_token, TOKEN_SECRET_KEY); // throws an error if token is invalid
     req.userId = decodedToken.userId;
+    console.log(decodedToken)
     next();
   } catch (err) {
     console.log(err);
