@@ -1,17 +1,82 @@
 import Product from "../models/product.model.js";
+import formidable from "formidable";
+import { handleFileUpload } from "../services/upload-file.service.js";
 
 export const registerProduct = async (req, res) => {
-  try {
-    const product = new Product(req.body);
-    await product.save();
-    res
-      .status(201)
-      .json({ message: "Product registered successfully", product });
-  } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error registering the product", error: error.message });
-  }
+  const form = formidable({});
+  let uploadedImages = [];
+  form.parse(req, async (err, fields, files) => {
+    if (err) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to Upload product Image",
+        error: err.message,
+      });
+    }
+
+    try {
+      if (
+        !fields.name ||
+        !fields.price ||
+        !fields.stock ||
+        !fields.brand ||
+        !fields.category
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Missing required fields (name, price, stock, brand, or category)",
+        });
+      }
+      if (!files.file) {
+        return res.status(400).json({
+          success: false,
+          message: "No Images were added for the product",
+        });
+      }
+      for (const file of files.file) {
+        console.log("Image path: ", file.filepath);
+        const response = await handleFileUpload(file.filepath);
+        uploadedImages.push({
+          url: response.secure_url,
+          image_id: response.asset_id,
+          public_id: response.public_id,
+        });
+      }
+
+      const productData = {
+        name: fields.name[0], // Access first element of array
+        price: parseFloat(fields.price[0]),
+        discountPrice: fields.discountPrice
+          ? parseFloat(fields.discountPrice[0])
+          : undefined,
+        stock: parseInt(fields.stock[0], 10),
+        gender: fields.gender ? fields.gender[0] : "both",
+        description: fields.description ? fields.description[0] : "",
+        sizes: fields.sizes ? fields.sizes[0].split(",") : [],
+        brand: fields.brand[0],
+        category: fields.category[0],
+        images: uploadedImages,
+      };
+
+      const product = new Product(productData);
+      await product.save();
+      return res
+        .status(200)
+        .json({
+          success: true,
+          message: "Product Registered successfully",
+          product,
+        });
+    } catch (error) {
+      console.error("Upload error:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Error uploading some files",
+        error: error.message,
+      });
+    }
+  });
 };
 
 export const getProducts = async (req, res) => {

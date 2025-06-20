@@ -12,7 +12,13 @@ const productSchema = new mongoose.Schema(
       default: "both",
     },
     description: { type: String },
-    images: [{ type: String }],
+    images: [
+      {
+        url: { type: String, required: true },
+        image_id: { type: String, required: true },
+        public_id: { type: String },
+      },
+    ],
     sizes: [{ type: String }],
     brand: {
       type: mongoose.Schema.Types.ObjectId,
