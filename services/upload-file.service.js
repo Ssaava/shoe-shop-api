@@ -3,7 +3,7 @@ import {
   CLOUDINARY_API_KEY,
   CLOUDINARY_API_SECRET,
   CLOUDINARY_CLOUD_NAME,
-  UPLOAD_PRESET,
+  CLOUDINARY_UPLOAD_PRESET,
 } from "../config/env.config.js";
 
 cloudinary.config({
@@ -17,7 +17,7 @@ export const handleFileUpload = async (file) => {
   try {
     const res = await cloudinary.uploader.upload(file, {
       resource_type: "auto",
-      upload_preset: UPLOAD_PRESET,
+      upload_preset: CLOUDINARY_UPLOAD_PRESET,
     });
     return res;
   } catch (err) {
