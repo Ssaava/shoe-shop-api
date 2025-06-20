@@ -1,13 +1,14 @@
 import { Router } from "express";
 import {
   login,
-  resendVerificationLink,
-  verifyEmail,
-  registerUser,
   logout,
   refreshToken,
+  registerUser,
+  resendVerificationLink,
+  verifyEmail,
 } from "../controllers/auth.controller.js";
 import { checkAuthentication } from "../middlewares/auth.middleware.js";
+
 const authRouter = Router();
 
 authRouter.post("/auth/register", registerUser);

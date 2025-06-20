@@ -1,10 +1,11 @@
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
+import jwt from "jsonwebtoken";
+import { REFRESH_TOKEN_SECRET } from "../config/env.config.js";
 import User from "../models/user.model.js";
 import sendVerificationEmail from "../services/email.service.js";
 import { generateToken } from "../utils/utils.js";
-import { REFRESH_TOKEN_SECRET } from "../config/env.config.js";
-import jwt from "jsonwebtoken";
+
 export const registerUser = async (req, res) => {
   try {
     const { firstname, lastname, email, password, contact } = req.body;
