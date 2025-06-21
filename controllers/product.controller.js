@@ -71,6 +71,11 @@ export const registerProduct = async (req, res) => {
       });
     } catch (error) {
       console.error("Upload error:", error);
+      if (uploadedImages.length > 0) {
+        for (const image of uploadedImages) {
+          await handleDeleteFile(image.public_id || image.asset_id);
+        }
+      }
       return res.status(500).json({
         success: false,
         message: "Error uploading some files",
@@ -99,7 +104,7 @@ export const getProduct = async (req, res) => {
     if (!productId) {
       return res.status(404).json({
         success: false,
-        message: "Provide Id for the image",
+        message: "Product Id Not Found",
       });
     }
 
@@ -118,22 +123,93 @@ export const getProduct = async (req, res) => {
 };
 
 export const updateProduct = async (req, res) => {
-  try {
-    const product = await Product.findByIdAndUpdate(
-      req.params.productId,
-      req.body,
-      {
-        new: true,
-        runValidators: true,
+  const { productId } = req.params;
+  const form = formidable({});
+
+  form.parse(req, async (err, fields, files) => {
+    if (err) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to Upload product Image",
+        error: err.message,
+      });
+    }
+    let newImages = [];
+    try {
+      const product = await Product.findById(productId);
+
+      if (!product) {
+        return res.status(404).json({
+          success: false,
+          message: "Product Not Found",
+        });
       }
-    );
-    if (!product) return res.status(404).json({ message: "Product not found" });
-    res.status(200).json({ message: "Product updated successfully", product });
-  } catch (error) {
-    res
-      .status(400)
-      .json({ message: "Error updating the product", error: error.message });
-  }
+
+      if (files.file) {
+        for (const file of files.file) {
+          const response = await handleFileUpload(file.filepath);
+          newImages.push({
+            url: response.secure_url,
+            image_id: response.asset_id,
+            public_id: response.public_id,
+          });
+        }
+      }
+
+      let updatedSizes = [...product.sizes];
+      if (fields.sizes && fields.sizes[0]) {
+        const newSizes = fields.sizes[0].split(",");
+        newSizes.forEach((size) => {
+          if (!updatedSizes.includes(size.trim())) {
+            updatedSizes.push(size.trim());
+          }
+        });
+      }
+
+      const productData = {
+        name: fields.name[0],
+        price: parseFloat(fields.price[0]),
+        discountPrice: fields.discountPrice
+          ? parseFloat(fields.discountPrice[0])
+          : undefined,
+        stock: parseInt(fields.stock[0], 10),
+        gender: fields.gender ? fields.gender[0] : "both",
+        description: fields.description ? fields.description[0] : "",
+        sizes: updatedSizes,
+        brand: fields.brand[0],
+        category: fields.category[0],
+        ...(newImages.length > 0 && {
+          images: [...product.images, ...newImages],
+        }),
+      };
+
+      const updatedProduct = await Product.findByIdAndUpdate(
+        productId,
+        { $set: productData },
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+      if (!updatedProduct)
+        return res.status(404).json({ message: "Product not found" });
+      res
+        .status(200)
+        .json({ message: "Product updated successfully", updatedProduct });
+    } catch (error) {
+      console.error("Update error:", error);
+      if (newImages.length > 0) {
+        for (const image of newImages) {
+          await handleDeleteFile(image.public_id || image.asset_id);
+        }
+      }
+      return res.status(500).json({
+        success: false,
+        message: "Error updating product information",
+        error: error.message,
+      });
+    }
+  });
 };
 
 export const deleteProduct = async (req, res) => {
