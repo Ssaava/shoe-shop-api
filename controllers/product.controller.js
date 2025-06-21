@@ -212,6 +212,52 @@ export const updateProduct = async (req, res) => {
   });
 };
 
+export const removeProductImage = async (req, res) => {
+  const { productId, publicId } = req.params;
+
+  try {
+    if (!productId || !publicId) {
+      return res.status(400).json({
+        success: false,
+        message: "Provide required parameters (productId, publicId)",
+      });
+    }
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product Not Found",
+      });
+    }
+    const response = await handleDeleteFile(publicId);
+    if (response.result !== "ok") {
+      return res
+        .status(400)
+        .json({ success: false, message: "Failed to delete product" });
+    }
+
+    const updatedProduct = await Product.findByIdAndUpdate(
+      productId,
+      { $pull: { images: { public_id: publicId } } },
+      { new: true }
+    );
+    if (!updatedProduct)
+      return res.status(404).json({ message: "Product not found" });
+    res.status(200).json({
+      success: true,
+      message: "Product updated successfully",
+      updatedProduct,
+    });
+  } catch (error) {
+    console.log("Remove Product Error: ".error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete Product Image",
+      error: error.message,
+    });
+  }
+};
+
 export const deleteProduct = async (req, res) => {
   const { productId } = req.params;
   try {
