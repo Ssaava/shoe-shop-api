@@ -205,7 +205,7 @@ export const updateProduct = async (req, res) => {
       }
       return res.status(500).json({
         success: false,
-        message: "Error updating product information",
+        message: "Error updating product data",
         error: error.message,
       });
     }
@@ -220,7 +220,7 @@ export const removeProductImage = async (req, res) => {
     if (!product) {
       return res.status(404).json({
         success: false,
-        message: "Product Not Found",
+        message: "Product Image Not Found",
       });
     }
     const deletionResults = await Promise.allSettled(
@@ -255,7 +255,7 @@ export const removeProductImage = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     res.status(200).json({
       success: true,
-      message: "Product updated successfully",
+      message: "Product Image removed successfully",
       updatedProduct,
       failedImages: failedDeletionsMessage,
     });
