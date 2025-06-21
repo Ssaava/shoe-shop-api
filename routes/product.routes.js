@@ -5,13 +5,15 @@ import {
   registerProduct,
   updateProduct,
   getProduct,
+  removeProductImage,
 } from "../controllers/product.controller.js";
 const productRouter = Router();
 
 productRouter.post("/product", registerProduct);
-productRouter.get("/product/:id", getProduct);
-productRouter.get("/products", getProducts);
-productRouter.put("/product/update/:id", updateProduct);
-productRouter.delete("/product/delete/:id", deleteProduct);
+productRouter.get("/product/:productId", getProduct);
+productRouter.get("/product/products/get-all", getProducts);
+productRouter.patch("/product/update/:productId", updateProduct);
+productRouter.patch("/product/update-images/:productId", removeProductImage);
+productRouter.delete("/product/delete/:productId", deleteProduct);
 
 export default productRouter;
