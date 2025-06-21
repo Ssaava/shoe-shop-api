@@ -34,10 +34,9 @@ export const handleDeleteFile = async (publicId) => {
       upload_preset: CLOUDINARY_UPLOAD_PRESET,
     });
 
-    console.log("Successfully Deleted Product Image: ", res);
     return res;
   } catch (error) {
     console.log("Handle Delete Asset Error: ", error.message);
-    return false;
+    return error;
   }
 };

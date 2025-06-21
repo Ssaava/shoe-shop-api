@@ -213,15 +213,9 @@ export const updateProduct = async (req, res) => {
 };
 
 export const removeProductImage = async (req, res) => {
-  const { productId, publicId } = req.params;
-
+  const { productId } = req.params;
+  const { publicIds } = req.body;
   try {
-    if (!productId || !publicId) {
-      return res.status(400).json({
-        success: false,
-        message: "Provide required parameters (productId, publicId)",
-      });
-    }
     const product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({
@@ -229,16 +223,32 @@ export const removeProductImage = async (req, res) => {
         message: "Product Not Found",
       });
     }
-    const response = await handleDeleteFile(publicId);
-    if (response.result !== "ok") {
-      return res
-        .status(400)
-        .json({ success: false, message: "Failed to delete product" });
+    const deletionResults = await Promise.allSettled(
+      publicIds.map((publicId) => handleDeleteFile(publicId))
+    );
+
+    const failedDeletions = deletionResults
+      .filter(
+        (result) =>
+          result.status === "rejected" || result.value?.result !== "ok"
+      )
+      .map((result, index) => ({
+        publicId: publicIds[index],
+        message: result.reason?.message || "Unknown Error Occurred",
+      }));
+
+    let failedDeletionsMessage = {};
+    if (failedDeletions.length > 0) {
+      failedDeletionsMessage = {
+        success: false,
+        message: "Some images failed to delete",
+        failedDeletions,
+      };
     }
 
     const updatedProduct = await Product.findByIdAndUpdate(
       productId,
-      { $pull: { images: { public_id: publicId } } },
+      { $pull: { images: { public_id: { $in: publicIds } } } },
       { new: true }
     );
     if (!updatedProduct)
@@ -247,6 +257,7 @@ export const removeProductImage = async (req, res) => {
       success: true,
       message: "Product updated successfully",
       updatedProduct,
+      failedImages: failedDeletionsMessage,
     });
   } catch (error) {
     console.log("Remove Product Error: ".error);
