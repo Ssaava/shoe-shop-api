@@ -16,11 +16,28 @@ cloudinary.config({
 export const handleFileUpload = async (file) => {
   try {
     const res = await cloudinary.uploader.upload(file, {
-      resource_type: "auto",
+      resource_type: "image",
       upload_preset: CLOUDINARY_UPLOAD_PRESET,
     });
     return res;
   } catch (err) {
     console.log("Handle Upload Error: ", err);
+    return false;
+  }
+};
+
+export const handleDeleteFile = async (publicId) => {
+  try {
+    const res = await cloudinary.uploader.destroy(publicId, {
+      resource_type: "image",
+      invalidate: true,
+      upload_preset: CLOUDINARY_UPLOAD_PRESET,
+    });
+
+    console.log("Successfully Deleted Product Image: ", res);
+    return res;
+  } catch (error) {
+    console.log("Handle Delete Asset Error: ", error.message);
+    return false;
   }
 };

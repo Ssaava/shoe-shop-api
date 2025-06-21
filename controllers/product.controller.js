@@ -1,6 +1,9 @@
 import Product from "../models/product.model.js";
 import formidable from "formidable";
-import { handleFileUpload } from "../services/upload-file.service.js";
+import {
+  handleDeleteFile,
+  handleFileUpload,
+} from "../services/cloudinary.service.js";
 
 export const registerProduct = async (req, res) => {
   const form = formidable({});
@@ -61,13 +64,11 @@ export const registerProduct = async (req, res) => {
 
       const product = new Product(productData);
       await product.save();
-      return res
-        .status(200)
-        .json({
-          success: true,
-          message: "Product Registered successfully",
-          product,
-        });
+      return res.status(200).json({
+        success: true,
+        message: "Product Registered successfully",
+        product,
+      });
     } catch (error) {
       console.error("Upload error:", error);
       return res.status(500).json({
@@ -79,7 +80,7 @@ export const registerProduct = async (req, res) => {
   });
 };
 
-export const getProducts = async (req, res) => {
+export const getProducts = async (_req, res) => {
   try {
     const products = await Product.find().populate("brand category");
     res
@@ -93,8 +94,16 @@ export const getProducts = async (req, res) => {
 };
 
 export const getProduct = async (req, res) => {
+  const { productId } = req.params;
   try {
-    const product = await Product.findById(req.params.id).populate(
+    if (!productId) {
+      return res.status(404).json({
+        success: false,
+        message: "Provide Id for the image",
+      });
+    }
+
+    const product = await Product.findById(productId).populate(
       "brand category"
     );
     if (!product) {
@@ -110,10 +119,14 @@ export const getProduct = async (req, res) => {
 
 export const updateProduct = async (req, res) => {
   try {
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
+    const product = await Product.findByIdAndUpdate(
+      req.params.productId,
+      req.body,
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
     if (!product) return res.status(404).json({ message: "Product not found" });
     res.status(200).json({ message: "Product updated successfully", product });
   } catch (error) {
@@ -124,10 +137,22 @@ export const updateProduct = async (req, res) => {
 };
 
 export const deleteProduct = async (req, res) => {
+  const { productId } = req.params;
   try {
-    const product = await Product.findByIdAndDelete(req.params.id);
+    if (!productId) {
+      return res.status(404).json({
+        success: false,
+        message: "Product Id Not Found",
+      });
+    }
+
+    const product = await Product.findByIdAndDelete(productId);
     if (!product) return res.status(404).json({ message: "Product not found" });
-    res.status(200).json({ message: "Product deleted" });
+    for (const image of product.images) {
+      await handleDeleteFile(image.public_id || image.asset_id);
+    }
+
+    res.status(200).json({ message: "Product deleted", product: product });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
