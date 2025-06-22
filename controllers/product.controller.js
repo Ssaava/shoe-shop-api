@@ -4,7 +4,8 @@ import {
   handleDeleteFile,
   handleFileUpload,
 } from "../services/cloudinary.service.js";
-
+import Category from "../models/category.model.js";
+import Brand from "../models/brand.model.js";
 export const registerProduct = async (req, res) => {
   const form = formidable({});
   let uploadedImages = [];
@@ -156,46 +157,74 @@ export const updateProduct = async (req, res) => {
         }
       }
 
-      let updatedSizes = [...product.sizes];
-      if (fields.sizes && fields.sizes[0]) {
-        const newSizes = fields.sizes[0].split(",");
-        newSizes.forEach((size) => {
-          if (!updatedSizes.includes(size.trim())) {
-            updatedSizes.push(size.trim());
-          }
-        });
+      const productData = {};
+
+      const getFieldValue = (field) =>
+        field && field[0] ? field[0] : undefined;
+
+      if (fields.name) productData.name = getFieldValue(fields.name);
+      if (fields.price)
+        productData.price = parseInt(getFieldValue(fields.price));
+      if (fields.discountPrice)
+        productData.discountPrice = parseInt(
+          getFieldValue(fields.discountPrice),
+          0
+        );
+      if (fields.stock)
+        productData.stock = parseInt(getFieldValue(fields.stock), 0);
+      if (fields.gender) productData.gender = getFieldValue(fields.gender);
+      if (fields.description)
+        productData.description = getFieldValue(fields.description);
+      if (fields.brand) {
+        const brandId = getFieldValue(fields.brand);
+        const brand = await Brand.findById(brandId);
+        if (!brand) {
+          return res.status(404).json({
+            success: false,
+            message: "Brand Does not Exist",
+          });
+        }
+        productData.brand = brandId;
+      }
+      if (fields.category) {
+        const categoryId = getFieldValue(fields.category);
+        const category = await Category.findById(categoryId);
+        if (!category) {
+          return res.status(404).json({
+            success: false,
+            message: "Category Does not Exist",
+          });
+        }
+        productData.category = categoryId;
       }
 
-      const productData = {
-        name: fields.name[0],
-        price: parseFloat(fields.price[0]),
-        discountPrice: fields.discountPrice
-          ? parseFloat(fields.discountPrice[0])
-          : undefined,
-        stock: parseInt(fields.stock[0], 10),
-        gender: fields.gender ? fields.gender[0] : "both",
-        description: fields.description ? fields.description[0] : "",
-        sizes: updatedSizes,
-        brand: fields.brand[0],
-        category: fields.category[0],
-        ...(newImages.length > 0 && {
-          images: [...product.images, ...newImages],
-        }),
-      };
+      if (fields.sizes) {
+        const updatedSizes = [...product.sizes];
+        const newSizes = getFieldValue(fields.sizes)
+          .split(",")
+          .map((s) => s.trim());
+        newSizes.forEach((size) => {
+          if (!updatedSizes.includes(size)) {
+            updatedSizes.push(size);
+          }
+        });
+        productData.sizes = updatedSizes;
+      }
+
+      if (newImages.length > 0) {
+        productData.$push = { images: { $each: newImages } };
+      }
 
       const updatedProduct = await Product.findByIdAndUpdate(
         productId,
-        { $set: productData },
+        productData,
         {
           new: true,
           runValidators: true,
         }
-      );
-      if (!updatedProduct)
-        return res.status(404).json({ message: "Product not found" });
-      res
-        .status(200)
-        .json({ message: "Product updated successfully", updatedProduct });
+      ).populate("brand category");
+
+      return res.status(200).json({ success: true, updatedProduct });
     } catch (error) {
       console.error("Update error:", error);
       if (newImages.length > 0) {
