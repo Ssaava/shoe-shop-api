@@ -15,18 +15,8 @@ const orderRouter = Router();
 
 orderRouter.post("/order", checkAuthentication, placeOrder);
 orderRouter.get("/order/user", checkAuthentication, getUserOrders);
-orderRouter.get(
-  "/order/get",
-  checkAuthentication,
-  checkAdminUser,
-  getAllOrders
-);
-orderRouter.patch(
-  "/order/deliver/:orderId",
-  checkAuthentication,
-  checkAdminUser,
-  markAsDelivered
-);
+orderRouter.get("/order/get", checkAdminUser, getAllOrders);
+orderRouter.patch("/order/deliver/:orderId", checkAdminUser, markAsDelivered);
 orderRouter.patch("/order/cancel/:orderId", checkAuthentication, cancelOrder);
 
 export default orderRouter;

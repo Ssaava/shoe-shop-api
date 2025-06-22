@@ -29,6 +29,6 @@ userRouter.put(
 userRouter.post("/user/forgot-password", rateLimiting, requestPasswordReset);
 userRouter.post("/user/reset-password", resetPassword);
 
-userRouter.delete("/user/:id", deleteUser);
+userRouter.delete("/user/:id", checkAdminUser, deleteUser);
 
 export default userRouter;

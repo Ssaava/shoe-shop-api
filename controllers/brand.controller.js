@@ -35,8 +35,13 @@ export const createBrand = async (req, res) => {
 
 export const fetchAllBrands = async (_req, res) => {
   try {
-    const brands = await Brand.find();
-    return res.status(200).json({ success: true, brands });
+    const data = await Brand.find();
+    if (!data) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Brands list is empty" });
+    }
+    return res.status(200).json({ success: true, data });
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -75,12 +80,12 @@ export const updateBrand = async (req, res) => {
         message: "Brand name is required",
       });
     }
-    const existingBrand = await Brand.findOne({ name });
+    const existingBrandName = await Brand.findOne({ name });
 
-    if (existingBrand && existingBrand.name === name) {
+    if (existingBrandName && existingBrandName.name === name) {
       return res.status(400).json({
         success: false,
-        message: "Same Brand name cannot update Brand",
+        message: "Brand Already Exists",
       });
     }
     const brand = await Brand.findByIdAndUpdate(
