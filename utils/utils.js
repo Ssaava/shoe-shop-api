@@ -63,3 +63,18 @@ export const mapOrderToCancelledEmailData = (order) => ({
   unsubscribe_link: "https://yourshop.com/unsubscribe",
   privacy_policy_link: "https://yourshop.com/privacy-policy",
 });
+
+export const mapOrderToProcessingEmailData = (order) => ({
+  customer_firstname: order.user.firstname,
+  order_number: order._id,
+  products: order.products.map((item) => ({
+    product_name: item.product.name,
+    quantity: item.quantity,
+    price: `UGX ${item.price.toLocaleString("en-UG")}`,
+  })),
+  order_total: `UGX ${order.total_price.toLocaleString("en-UG")}`,
+  delivery_city: order.shipping_address.city,
+  tracking_link: `https://yourshop.com/track-order/${order._id}`,
+  unsubscribe_link: "https://yourshop.com/unsubscribe",
+  privacy_policy_link: "https://yourshop.com/privacy-policy",
+});

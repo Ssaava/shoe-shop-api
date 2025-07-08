@@ -2,7 +2,20 @@ import Sales from "../models/sales.model.js";
 
 export const getAllSales = async (_req, res) => {
   try {
-    const sales = await Sales.find().populate("order");
+    const sales = await Sales.find().populate({
+      path: "order",
+      populate: [
+        {
+          path: "user",
+          select: "firstname lastname email contact",
+        },
+        {
+          path: "products.product",
+          select:
+            "name price stock gender images payment_method total_price delivered_at cancelled_at",
+        },
+      ],
+    });
     if (!sales) {
       return res
         .status(404)
