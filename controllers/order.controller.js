@@ -6,6 +6,7 @@ import { htmlTemplate } from "../services/html-template.service.js";
 import {
   mapOrderToCancelledEmailData,
   mapOrderToDeliveredEmailData,
+  mapOrderToProcessingEmailData,
   mapShippedOrderToEmailTemplateData,
 } from "../utils/utils.js";
 
@@ -39,7 +40,7 @@ export const placeOrder = async (req, res) => {
 
     const totalPrice = cart.totalCost;
 
-    const order = new Order({
+    const newOrder = new Order({
       user: userId,
       products: orderProducts,
       shipping_address: shippingAddress,
@@ -47,14 +48,33 @@ export const placeOrder = async (req, res) => {
       total_price: totalPrice,
     });
 
-    await order.save();
+    await newOrder.save();
 
-    // Clear the cart after placing order
     cart.products = [];
     cart.totalCost = 0;
     await cart.save();
 
-    res.status(201).json({ success: true, order });
+    const order = await Order.findById(newOrder._id)
+      .populate({
+        path: "user",
+        select: "firstname lastname email",
+      })
+      .populate({
+        path: "products.product",
+        select: "name images",
+      });
+    const templateData = mapOrderToProcessingEmailData(order);
+    const htmlToSend = htmlTemplate(
+      "../templates/order-processing.template.html",
+      templateData
+    );
+    sendCustomEmail(
+      order.user.email,
+      `Your order ${order._id} has been Placed Successfully`,
+      htmlToSend
+    );
+
+    res.status(201).json({ success: true, data: newOrder });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -123,6 +143,21 @@ export const updateOrderStatus = async (req, res) => {
     if (status == "delivered") {
       updatedOrder.delivered_at = new Date();
       updatedOrder.payment_status = "completed";
+    }
+    if (status == "cancelled") {
+      updatedOrder.cancelled_at = new Date();
+      updatedOrder.payment_status = "failed";
+    }
+
+    const patchedOrder = await Order.findByIdAndUpdate(orderId, updatedOrder);
+    if (!patchedOrder) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Failed update order status" });
+    }
+
+    let sales;
+    if (status === "delivered") {
       const templateData = mapOrderToDeliveredEmailData(order);
       const htmlToSend = htmlTemplate(
         "../templates/order-delivered.template.html",
@@ -133,11 +168,11 @@ export const updateOrderStatus = async (req, res) => {
         `Your order ${order._id} has been delivered Successfully`,
         htmlToSend
       );
+      sales = new Sales({ order: patchedOrder._id });
+      await sales.save();
     }
-    if (status == "cancelled") {
-      updatedOrder.cancelled_at = new Date();
-      updatedOrder.payment_status = "failed";
 
+    if (status == "cancelled") {
       const templateData = mapOrderToCancelledEmailData(order);
       const htmlToSend = htmlTemplate(
         "../templates/order-cancelled.template.html",
@@ -163,19 +198,6 @@ export const updateOrderStatus = async (req, res) => {
       );
     }
 
-    const patchedOrder = await Order.findByIdAndUpdate(orderId, updatedOrder);
-    if (!patchedOrder) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Failed update order status" });
-    }
-
-    let sales;
-    if (status === "delivered") {
-      sales = new Sales({ order: patchedOrder._id });
-      await sales.save();
-    }
-
     return res.status(200).json({
       success: true,
       message: `Order has been ${status} Successfully`,
@@ -191,7 +213,6 @@ export const updateOrderStatus = async (req, res) => {
   }
 };
 
-// Cancel order (user controller)
 export const cancelOrder = async (req, res) => {
   const { status, orderId } = req.body;
   try {
@@ -201,7 +222,15 @@ export const cancelOrder = async (req, res) => {
         .json({ success: false, message: "Invalid order Status" });
     }
 
-    const order = await Order.findById(orderId);
+    const order = await Order.findById(orderId)
+      .populate({
+        path: "user",
+        select: "firstname lastname email",
+      })
+      .populate({
+        path: "products.product",
+        select: "name images",
+      });
     if (!order) {
       return res
         .status(404)
@@ -235,6 +264,17 @@ export const cancelOrder = async (req, res) => {
         .status(400)
         .json({ success: false, message: "Failed update order status" });
     }
+
+    const templateData = mapOrderToCancelledEmailData(order);
+    const htmlToSend = htmlTemplate(
+      "../templates/order-cancelled.template.html",
+      templateData
+    );
+    sendCustomEmail(
+      order.user.email,
+      `Your order ${order._id} has been Cancelled`,
+      htmlToSend
+    );
 
     return res.status(200).json({
       success: true,
