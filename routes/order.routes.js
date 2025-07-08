@@ -1,22 +1,22 @@
 import { Router } from "express";
 import {
-  placeOrder,
+  cancelOrder,
   getAllOrders,
   getUserOrders,
-  markAsDelivered,
-  cancelOrder,
+  placeOrder,
+  updateOrderStatus,
 } from "../controllers/order.controller.js";
 import {
-  checkAuthentication,
   checkAdminUser,
+  checkAuthentication,
 } from "../middlewares/auth.middleware.js";
 
 const orderRouter = Router();
 
 orderRouter.post("/order", checkAuthentication, placeOrder);
 orderRouter.get("/order/user", checkAuthentication, getUserOrders);
-orderRouter.get("/order/get", checkAdminUser, getAllOrders);
-orderRouter.patch("/order/deliver/:orderId", checkAdminUser, markAsDelivered);
-orderRouter.patch("/order/cancel/:orderId", checkAuthentication, cancelOrder);
+orderRouter.get("/order/orders", checkAdminUser, getAllOrders);
+orderRouter.patch("/order/status", checkAdminUser, updateOrderStatus);
+orderRouter.patch("/order/cancel", checkAuthentication, cancelOrder);
 
 export default orderRouter;

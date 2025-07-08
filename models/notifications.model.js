@@ -8,6 +8,7 @@ const notificationSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    is_read: { type: Boolean, default: false },
   },
   {
     timestamps: true,
