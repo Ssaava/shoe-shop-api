@@ -1,5 +1,6 @@
 import Order from "../models/order.model.js";
 import Cart from "../models/cart.models.js";
+import Sales from "../models/sales.model.js";
 
 export const placeOrder = async (req, res) => {
   try {
@@ -119,9 +120,16 @@ export const updateOrderStatus = async (req, res) => {
         .json({ success: false, message: "Failed update order status" });
     }
 
+    let sales;
+    if (status === "delivered") {
+      sales = new Sales({ order: patchedOrder._id });
+      await sales.save();
+    }
+
     return res.status(200).json({
       success: true,
       message: `Order has been ${status} Successfully`,
+      sales,
     });
   } catch (error) {
     return res.status(500).json({
