@@ -1,7 +1,13 @@
-import Order from "../models/order.model.js";
 import Cart from "../models/cart.models.js";
+import Order from "../models/order.model.js";
 import Sales from "../models/sales.model.js";
-import { sendShippedStatusEmail } from "../services/email.service.js";
+import { sendCustomEmail } from "../services/email.service.js";
+import { htmlTemplate } from "../services/html-template.service.js";
+import {
+  mapOrderToCancelledEmailData,
+  mapOrderToDeliveredEmailData,
+  mapShippedOrderToEmailTemplateData,
+} from "../utils/utils.js";
 
 export const placeOrder = async (req, res) => {
   try {
@@ -117,14 +123,44 @@ export const updateOrderStatus = async (req, res) => {
     if (status == "delivered") {
       updatedOrder.delivered_at = new Date();
       updatedOrder.payment_status = "completed";
+      const templateData = mapOrderToDeliveredEmailData(order);
+      const htmlToSend = htmlTemplate(
+        "../templates/order-delivered.template.html",
+        templateData
+      );
+      sendCustomEmail(
+        order.user.email,
+        `Your order ${order._id} has been delivered Successfully`,
+        htmlToSend
+      );
     }
     if (status == "cancelled") {
       updatedOrder.cancelled_at = new Date();
       updatedOrder.payment_status = "failed";
+
+      const templateData = mapOrderToCancelledEmailData(order);
+      const htmlToSend = htmlTemplate(
+        "../templates/order-cancelled.template.html",
+        templateData
+      );
+      sendCustomEmail(
+        order.user.email,
+        `Your order ${order._id} has been Cancelled`,
+        htmlToSend
+      );
     }
 
     if (status == "shipped") {
-      sendShippedStatusEmail(order.user.email, order);
+      const templateData = mapShippedOrderToEmailTemplateData(order);
+      const htmlToSend = htmlTemplate(
+        "../templates/order-shipped.template.html",
+        templateData
+      );
+      sendCustomEmail(
+        order.user.email,
+        `Your order ${order._id} has been shipped`,
+        htmlToSend
+      );
     }
 
     const patchedOrder = await Order.findByIdAndUpdate(orderId, updatedOrder);
@@ -146,6 +182,8 @@ export const updateOrderStatus = async (req, res) => {
       sales,
     });
   } catch (error) {
+    console.log(error);
+
     return res.status(500).json({
       success: false,
       message: error.message || "Internal Server Error",
