@@ -15,30 +15,30 @@ const orderSchema = new mongoose.Schema(
         size: String,
       },
     ],
-    shippingAddress: {
+    shipping_address: {
       street: { type: String },
       city: { type: String },
       country: { type: String },
-      phoneNumber: { type: String },
+      phone_number: { type: String },
     },
-    paymentMethod: {
+    payment_method: {
       type: String,
       enum: ["stripe", "cash"],
       required: true,
     },
-    paymentStatus: {
+    payment_status: {
       type: String,
       enum: ["pending", "completed", "failed"],
       default: "pending",
     },
-    orderStatus: {
+    order_status: {
       type: String,
       enum: ["processing", "shipped", "delivered", "cancelled"],
       default: "processing",
     },
-    totalPrice: { type: Number, required: true },
-    shippingPrice: { type: Number, default: 0 },
-    deliveredAt: Date,
+    total_price: { type: Number, required: true },
+    delivered_at: Date,
+    cancelled_at: Date,
   },
   { timestamps: true }
 );

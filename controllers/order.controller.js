@@ -1,20 +1,25 @@
-// controllers/order.controller.js
 import Order from "../models/order.model.js";
 import Cart from "../models/cart.models.js";
 
 export const placeOrder = async (req, res) => {
   try {
     const userId = req.userId;
-    const { shippingAddress, paymentMethod, shippingPrice = 0 } = req.body;
+    const { shippingAddress, paymentMethod } = req.body;
 
-    // Validate
     if (!shippingAddress || !paymentMethod) {
-      return res.status(400).json({ message: "Shipping address and payment method are required." });
+      return res.status(400).json({
+        success: false,
+        message: "Shipping address and payment method are required.",
+      });
     }
 
-    const cart = await Cart.findOne({ user: userId }).populate("products.product");
+    const cart = await Cart.findOne({ user: userId }).populate(
+      "products.product"
+    );
     if (!cart || cart.products.length === 0) {
-      return res.status(400).json({ message: "Cart is empty." });
+      return res
+        .status(400)
+        .json({ success: false, message: "Cart is empty." });
     }
 
     const orderProducts = cart.products.map((item) => ({
@@ -24,15 +29,14 @@ export const placeOrder = async (req, res) => {
       size: item.size || null,
     }));
 
-    const totalPrice = cart.totalCost + Number(shippingPrice);
+    const totalPrice = cart.totalCost;
 
     const order = new Order({
       user: userId,
       products: orderProducts,
-      shippingAddress,
-      paymentMethod,
-      shippingPrice,
-      totalPrice,
+      shipping_address: shippingAddress,
+      payment_method: paymentMethod,
+      total_price: totalPrice,
     });
 
     await order.save();
@@ -42,19 +46,22 @@ export const placeOrder = async (req, res) => {
     cart.totalCost = 0;
     await cart.save();
 
-    res.status(201).json({ message: "Order placed successfully", order });
+    res.status(201).json({ success: true, order });
   } catch (error) {
-    res.status(500).json({ message: "Error placing order", error: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
 // Get all orders (admin only)
-export const getAllOrders = async (req, res) => {
+export const getAllOrders = async (_req, res) => {
   try {
-    const orders = await Order.find().populate("user").populate("products.product");
-    res.status(200).json({ message: "Orders fetched successfully", orders });
+    const orders = await Order.find()
+      .populate("user")
+      .populate({ path: "products.product" })
+      .sort({ createdAt: -1 });
+    res.status(200).json({ success: true, orders });
   } catch (error) {
-    res.status(500).json({ message: "Failed to fetch orders", error: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -62,55 +69,121 @@ export const getAllOrders = async (req, res) => {
 export const getUserOrders = async (req, res) => {
   try {
     const userId = req.userId;
-    const orders = await Order.find({ user: userId }).populate("products.product");
-    res.status(200).json({ message: "User orders fetched", orders });
+    const orders = await Order.find({ user: userId }).populate(
+      "products.product"
+    );
+    res.status(200).json({ success: true, orders });
   } catch (error) {
-    res.status(500).json({ message: "Failed to fetch orders", error: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// Mark order as delivered (admin only)
-export const markAsDelivered = async (req, res) => {
+export const updateOrderStatus = async (req, res) => {
+  const { status, orderId } = req.body;
   try {
-    const { orderId } = req.params;
+    if (status != "shipped" && status != "delivered" && status != "cancelled") {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid order Status" });
+    }
+
     const order = await Order.findById(orderId);
-    if (!order) return res.status(404).json({ message: "Order not found" });
+    if (!order) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
+    }
+    if (
+      order.order_status === "delivered" ||
+      order.order_status === "cancelled"
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: `Order already marked as ${order.order_status}`,
+      });
+    }
+    let updatedOrder = { order_status: status };
+    if (status == "delivered") {
+      updatedOrder.delivered_at = new Date();
+      updatedOrder.payment_status = "completed";
+    }
+    if (status == "cancelled") {
+      updatedOrder.cancelled_at = new Date();
+      updatedOrder.payment_status = "failed";
+    }
 
-    order.orderStatus = "delivered";
-    order.paymentStatus = "completed";
-    order.deliveredAt = new Date();
+    const patchedOrder = await Order.findByIdAndUpdate(orderId, updatedOrder);
+    if (!patchedOrder) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Failed update order status" });
+    }
 
-    await order.save();
-    res.status(200).json({ message: "Order marked as delivered", order });
+    return res.status(200).json({
+      success: true,
+      message: `Order has been ${status} Successfully`,
+    });
   } catch (error) {
-    res.status(500).json({ message: "Failed to update order", error: error.message });
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Internal Server Error",
+    });
   }
 };
 
-// Cancel an order (user or admin)
+// Cancel order (user controller)
 export const cancelOrder = async (req, res) => {
+  const { status, orderId } = req.body;
   try {
-    const { orderId } = req.params;
-    const userId = req.userId;
-    const userRole = req.userRole;
+    if (status != "cancelled") {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid order Status" });
+    }
 
     const order = await Order.findById(orderId);
-    if (!order) return res.status(404).json({ message: "Order not found" });
-
-    // Only allow the user who placed the order or an admin to cancel
-    if (order.user.toString() !== userId && userRole !== "admin") {
-      return res.status(403).json({ message: "Not authorized to cancel this order" });
+    if (!order) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
+    }
+    if (
+      order.order_status === "delivered" ||
+      order.order_status === "cancelled"
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: `Order already marked as ${order.order_status}`,
+      });
     }
 
-    if (order.orderStatus === "cancelled") {
-      return res.status(400).json({ message: "Order is already cancelled" });
+    if (order.order_status === "shipped") {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot cancel Already Shipped Order`,
+      });
+    }
+    let updatedOrder = {
+      order_status: status,
+      cancelled_at: new Date(),
+      payment_status: "failed",
+    };
+
+    const patchedOrder = await Order.findByIdAndUpdate(orderId, updatedOrder);
+    if (!patchedOrder) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Failed update order status" });
     }
 
-    order.orderStatus = "cancelled";
-    await order.save();
-
-    res.status(200).json({ message: "Order cancelled successfully", order });
+    return res.status(200).json({
+      success: true,
+      message: `Order has been ${status} Successfully`,
+    });
   } catch (error) {
-    res.status(500).json({ message: "Failed to cancel order", error: error.message });
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Internal Server Error",
+    });
   }
 };
