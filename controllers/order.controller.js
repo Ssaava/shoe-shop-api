@@ -1,6 +1,7 @@
 import Order from "../models/order.model.js";
 import Cart from "../models/cart.models.js";
 import Sales from "../models/sales.model.js";
+import { sendShippedStatusEmail } from "../services/email.service.js";
 
 export const placeOrder = async (req, res) => {
   try {
@@ -88,7 +89,16 @@ export const updateOrderStatus = async (req, res) => {
         .json({ success: false, message: "Invalid order Status" });
     }
 
-    const order = await Order.findById(orderId);
+    const order = await Order.findById(orderId)
+      .populate({
+        path: "user",
+        select: "firstname lastname email",
+      })
+      .populate({
+        path: "products.product",
+        select: "name images",
+      });
+
     if (!order) {
       return res
         .status(404)
@@ -111,6 +121,10 @@ export const updateOrderStatus = async (req, res) => {
     if (status == "cancelled") {
       updatedOrder.cancelled_at = new Date();
       updatedOrder.payment_status = "failed";
+    }
+
+    if (status == "shipped") {
+      sendShippedStatusEmail(order.user.email, order);
     }
 
     const patchedOrder = await Order.findByIdAndUpdate(orderId, updatedOrder);
