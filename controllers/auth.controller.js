@@ -140,8 +140,6 @@ export const login = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "User Logged in successfully",
-      access_token,
-      refresh_token,
       user: {
         firstname: user.firstname,
         lastname: user.lastname,
@@ -158,8 +156,9 @@ export const login = async (req, res) => {
 };
 
 export const refreshToken = async (req, res) => {
+  let count = 0;
   try {
-    const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
+    const refreshToken = req.cookies.refreshToken;
 
     if (!refreshToken) {
       return res
@@ -204,15 +203,21 @@ export const refreshToken = async (req, res) => {
       httpOnly: true,
       sameSite: "None",
     });
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "token refreshed successfully",
-      access_token,
-      refresh_token,
+      user: {
+        firstname: user.firstname,
+        lastname: user.lastname,
+        email: user.email,
+        isVerified: user.isVerified,
+        contact: user.contact,
+        role: user.role,
+      },
     });
   } catch (err) {
     console.log(err.message);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Invalid or expired refresh token",
     });
@@ -236,10 +241,12 @@ export const logout = async (req, res) => {
       sameSite: "None",
       secure: true,
     });
-    res
+    return res
       .status(200)
       .json({ success: true, message: "User Logged Out successfully" });
   } catch (err) {
-    res.status(500).json({ success: false, message: "Internal server error" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
   }
 };

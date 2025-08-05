@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import { TOKEN_SECRET_KEY } from "../config/env.config.js";
 export const checkAuthentication = async (req, res, next) => {
   try {
+    console.log("Rested Auth: ", req.cookies);
     const access_token =
       req.cookies.accessToken || req.headers.authorization.split(" ")[1];
     if (!access_token) return res.status(401).json({ message: "Please login" });
