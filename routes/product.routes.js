@@ -12,7 +12,7 @@ const productRouter = Router();
 
 productRouter.post("/product", checkAdminUser, registerProduct);
 productRouter.get("/product/:productId", getProduct);
-productRouter.get("/product/products/get-all", getProducts);
+productRouter.get("/product/products/all", getProducts);
 productRouter.patch(
   "/product/update/:productId",
   checkAdminUser,
