@@ -1,5 +1,5 @@
 import { connectDB } from "../config/db.config.js";
-import { PORT } from "../config/env.config.js";
+import { PORT, FRONTEND_SERVER_URL } from "../config/env.config.js";
 import cors from "cors";
 import express from "express";
 import cookieParser from "cookie-parser";
@@ -16,7 +16,12 @@ import notificationsRouter from "../routes/notifications.routes.js";
 
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: FRONTEND_SERVER_URL || "http://localhost:5173",
+    credentials: true,
+  })
+);
 app.use(helmet());
 app.use(cookieParser());
 app.use(express.json());
