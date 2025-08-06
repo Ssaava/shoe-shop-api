@@ -21,56 +21,12 @@ export const getUsers = async (req, res) => {
 
 export const updateUser = async (req, res) => {
   try {
-    const userData = req.body;
+    const { firstname, lastname, image, coverImage, contact } = req.body;
     const userId = req.userId;
-
-    const allowedUpdates = [
-      "firstname",
-      "lastname",
-      "email",
-      "image",
-      "coverPhoto",
-      "contact",
-    ];
-    const updates = Object.keys(req.body).filter((key) =>
-      allowedUpdates.includes(key)
-    );
-
-    if (updates.length <= 0) {
-      return res
-        .status(403)
-        .json({ success: false, message: "You cannot edit user information" });
-    }
-
-    const restrictedFields = [
-      "role",
-      "email",
-      "password",
-      "isVerified",
-      "verificationToken",
-      "verificationTokenExpires",
-    ];
-
-    const attemptedRestrictedUpdates = Object.keys(userData).filter((field) =>
-      restrictedFields.includes(field)
-    );
-
-    if (attemptedRestrictedUpdates.length > 0) {
-      return res.status(403).json({
-        error: "Forbidden",
-        message: `Cannot update restricted fields: ${attemptedRestrictedUpdates.join(
-          ", "
-        )}`,
-        solution:
-          "Use dedicated endpoints for these actions (e.g., /api/user/change-password)",
-      });
-    }
-
-    restrictedFields.forEach((field) => delete userData[field]);
 
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { $set: userData },
+      { $set: { firstname, lastname, image, coverImage, contact } },
       {
         new: true,
         runValidators: true,
@@ -81,7 +37,7 @@ export const updateUser = async (req, res) => {
 
     res
       .status(200)
-      .json({ message: "User updated Successfully", data: updatedUser });
+      .json({ message: "User updated Successfully", user: updatedUser });
   } catch (err) {
     console.log(err);
     res.status(401).json({ message: "Failed to update user" });
@@ -126,12 +82,12 @@ export const updateUserPassword = async (req, res) => {
 
     res.clearCookie("accessToken", {
       httpOnly: true,
-      sameSite: "strict",
+      sameSite: "None",
       secure: true,
     });
     res.clearCookie("refreshToken", {
       httpOnly: true,
-      sameSite: "strict",
+      sameSite: "None",
       secure: true,
     });
     res.status(200).json({ message: "Password updated Successfully" });
@@ -201,12 +157,12 @@ export const resetPassword = async (req, res) => {
 
     res.clearCookie("accessToken", {
       httpOnly: true,
-      sameSite: "strict",
+      sameSite: "None",
       secure: true,
     });
     res.clearCookie("refreshToken", {
       httpOnly: true,
-      sameSite: "strict",
+      sameSite: "None",
       secure: true,
     });
     res.status(200).json({
