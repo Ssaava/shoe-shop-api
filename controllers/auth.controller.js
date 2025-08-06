@@ -147,6 +147,12 @@ export const login = async (req, res) => {
         isVerified: user.isVerified,
         contact: user.contact,
         role: user.role,
+        wishlist: user.wishList,
+        orders: user.orders,
+        addresses: user.addresses,
+        image: user.image,
+        coverImage: user.coverImage,
+        joined: user.createdAt,
       },
     });
   } catch (err) {
@@ -156,7 +162,6 @@ export const login = async (req, res) => {
 };
 
 export const refreshToken = async (req, res) => {
-  let count = 0;
   try {
     const refreshToken = req.cookies.refreshToken;
 
@@ -190,6 +195,8 @@ export const refreshToken = async (req, res) => {
     });
 
     await user.save();
+
+    console.log(user);
     res.cookie("refreshToken", refresh_token, {
       maxAge: 7 * 24 * 60 * 60 * 10000,
       secure: true,
@@ -213,6 +220,12 @@ export const refreshToken = async (req, res) => {
         isVerified: user.isVerified,
         contact: user.contact,
         role: user.role,
+        wishlist: user.wishList,
+        orders: user.orders,
+        addresses: user.addresses,
+        image: user.image,
+        coverImage: user.coverImage,
+        joined: user.createdAt,
       },
     });
   } catch (err) {
